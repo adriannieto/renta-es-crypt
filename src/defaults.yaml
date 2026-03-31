@@ -1,0 +1,175 @@
+# Documented default settings for renta-es-crypt.
+# The CLI uses this file by default, and optional --config files are merged on
+# top of these values.
+#
+# Warning:
+# This tool is only an aid for home taxpayers. You remain responsible for
+# reviewing the output and confirming the applicable tax treatment.
+#
+# Tax assumptions encoded by default:
+# - FIFO per asset
+# - buy fees increase acquisition value
+# - sell fees reduce transmission value
+# - crypto-to-crypto swaps are treated as "permuta":
+#   sale of the asset delivered + purchase of the asset received
+# - if a trade already contains a fiat leg, the fiat amount is used first to
+#   derive the EUR valuation; external price feeds are only used for
+#   crypto-to-crypto valuation or explicit fiat->EUR conversion
+# - staking rewards and airdrops are tracked separately as income schedules
+# - airdrops are treated as gains not derived from a prior transmission and
+#   should be reviewed in the general-base part of the return
+# - unmatched transfers are always warned about
+
+currency: EUR
+
+# Reporting year used by CSV exports.
+tax_year: 2025
+
+# Shared cache directory for on-disk reusable data.
+# The final resolved-price cache stays in memory during the run, but reusable
+# artifacts are stored here:
+# - downloaded CryptoDataDownload CSV snapshots
+# - persisted external-provider lookups, split into small files per asset and
+#   resolution to avoid one huge JSON file
+# Keep this global so future reusable caches can live alongside it.
+cache_dir: .cache
+
+# Assets listed here are ignored completely during parsing/orchestration.
+# This is a hard exclusion:
+# - transactions whose main asset is ignored are dropped
+# - transactions whose counter-asset is ignored are also dropped
+# This is useful for problematic assets you do not want to include in the tax
+# calculation, such as delisted or highly ambiguous fork assets.
+ignored_assets: []
+
+pricing:
+  # Backfill provider populates the local pair cache first.
+  # Use "none" to disable local backfill entirely and rely only on the
+  # external provider.
+  backfill_provider: cryptodatadownload
+
+  # External provider is used only when the local cache still cannot resolve
+  # the requested EUR value after trying direct pairs and triangulation.
+  external_provider: coingecko
+
+  # Price bucketing precision used for local cache grouping.
+  # The cache/backfill layer consumes CryptoDataDownload files at exactly this
+  # precision. By default we keep hour resolution so the local cache stays
+  # useful for tax work without silently degrading into day-level candles.
+  #
+  # Warning:
+  # - day reuses cache more aggressively, but it can materially distort gains
+  #   when the same asset has multiple same-day operations.
+  # - minute is more precise, but CryptoDataDownload minute files are yearly
+  #   and not every pair/year exists, so backfills can be much more incomplete.
+  resolution: hour
+
+  # If enabled, local backfill is allowed to downgrade one step when the exact
+  # requested resolution does not exist:
+  # - minute -> hour
+  # - hour -> day
+  #
+  # Warning:
+  # A downgraded backfill can materially smooth historical prices and alter the
+  # resulting gain/loss calculation. Every downgraded resolution match is
+  # emitted as a warning so the user can review where precision was reduced.
+  allow_backfill_resolution_downgrade: false
+
+  # Emit warnings when the configured resolution is considered too low for the
+  # observed transaction set.
+  warn_on_low_resolution: true
+
+  cryptodatadownload:
+    # Base URL for CryptoDataDownload CSV snapshots.
+    base_url: https://www.cryptodatadownload.com/cdd
+
+    # Exchanges queried for each pair backfill.
+    # Every available exchange dataset is loaded, and the resolver uses the
+    # average close price of all exchanges that have data for the requested
+    # bucket. This also helps fill gaps when one exchange is missing a bucket
+    # but another exchange has it.
+    exchanges:
+      - Binance
+      - Bitfinex
+      - Bitstamp
+      - Gemini
+
+    # Quote assets used for triangulation when a direct EUR pair does not
+    # exist. They also define the allowed anchor assets for indirect pair
+    # resolution, so the resolver only tries bridges from this list. Example:
+    # - if ETHEUR is missing, try ETHUSD -> USDEUR
+    # - if ETHEUR is missing, try ETHBTC -> BTCEUR
+    quote_priority:
+      - EUR
+      - USD
+      - USDT
+      - USDC
+      - BTC
+
+    # Optional symbol remapping when your local ticker differs from the pair
+    # symbol used by CryptoDataDownload. This is only a ticker-normalization
+    # map, not a list of bridge or anchor assets.
+    symbols:
+      BTC: BTC
+      ETH: ETH
+      SOL: SOL
+      XTZ: XTZ
+
+    # Aggregate file suffixes. Hour and day files usually span all available
+    # years, while minute files are yearly.
+    hour_suffix: 1h
+    day_suffix: d
+    minute_suffix: minute
+
+  coingecko:
+    # External fallback provider used only when the local cached pair data
+    # cannot resolve the required value.
+    base_url: https://api.coingecko.com/api/v3
+
+    # CoinGecko API key. The request header is derived from the configured host:
+    # - api.coingecko.com -> x-cg-demo-api-key
+    # - pro-api.coingecko.com -> x-cg-pro-api-key
+    api_key:
+
+    # Map local asset tickers to CoinGecko coin ids for the external fallback.
+    coin_ids:
+      BTC: bitcoin
+      BSV: bitcoin-cash-sv
+      ETH: ethereum
+      SOL: solana
+      XTZ: tezos
+      ATOM: cosmos
+      TRUMP: official-trump
+      EIGEN: eigenlayer
+      LUNA2: terra-luna-2
+      
+reporting:
+  # Internal engine timezone. CSV timestamps are normalized to UTC.
+  timezone: UTC
+
+  # Transfer matching window for exchange -> wallet or wallet -> exchange moves.
+  transfer_window_hours: 4
+
+  # Allowed percentage difference when matching transfer amounts.
+  # This exists mainly for network fees or tiny dust differences.
+  transfer_amount_tolerance_pct: 1.0
+
+  # How to treat unmatched inbound transfers:
+  # - fail:
+  #     stop the run after listing every unmatched inbound transfer.
+  #     This is the safest default when inventory origin is incomplete.
+  # - warn:
+  #     keep a warning only; do not add inventory automatically.
+  # - zero_cost_basis:
+  #     add unmatched inbound transfers to FIFO at 0 EUR basis.
+  #     This can overstate gains, may make the taxpayer pay more tax than
+  #     reality, and may not be fully compliant with Spanish tax law.
+  unmatched_transfer_in_mode: fail
+
+  # Two-month rule handling:
+  # - enabled:
+  #     affected losses are flagged with Wash-Sale-Warning.
+  # - disabled:
+  #     do not enforce the flag, but still warn when the situation is detected.
+  #     This can produce a result more favorable than a conservative treatment.
+  two_month_rule_mode: enabled

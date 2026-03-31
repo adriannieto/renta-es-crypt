@@ -1,0 +1,52 @@
+{
+  "name": "fifo_non_staking_multi_lot",
+  "transactions": [
+    {
+      "timestamp": "2025-01-01T10:00:00Z",
+      "asset": "BTC",
+      "type": "BUY",
+      "amount": "0.8",
+      "price_eur": "20000",
+      "fee_eur": "20",
+      "tx_id": "buy-1"
+    },
+    {
+      "timestamp": "2025-01-10T10:00:00Z",
+      "asset": "BTC",
+      "type": "BUY",
+      "amount": "0.4",
+      "price_eur": "25000",
+      "fee_eur": "10",
+      "tx_id": "buy-2"
+    },
+    {
+      "timestamp": "2025-02-10T10:00:00Z",
+      "asset": "BTC",
+      "type": "SELL",
+      "amount": "1.0",
+      "price_eur": "30000",
+      "fee_eur": "15",
+      "tx_id": "sell-1"
+    }
+  ],
+  "expected": {
+    "realized_gain_count": 2,
+    "total_gain_eur": "8960",
+    "staking_income_count": 0,
+    "staking_income_total_eur": "0",
+    "internal_transfer_count": 0,
+    "unmatched_transfer_count": 0,
+    "open_lots": {
+      "BTC": [
+        {
+          "amount_remaining": "0.2",
+          "total_cost_eur": "10010"
+        }
+      ]
+    },
+    "gain_flags_by_index": [
+      [],
+      []
+    ]
+  }
+}

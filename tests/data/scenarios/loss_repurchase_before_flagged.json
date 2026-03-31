@@ -1,0 +1,51 @@
+{
+  "name": "loss_repurchase_before_flagged",
+  "transactions": [
+    {
+      "timestamp": "2024-01-01T10:00:00Z",
+      "asset": "SOL",
+      "type": "BUY",
+      "amount": "1.0",
+      "price_eur": "150",
+      "fee_eur": "0",
+      "tx_id": "buy-1"
+    },
+    {
+      "timestamp": "2025-01-05T10:00:00Z",
+      "asset": "SOL",
+      "type": "BUY",
+      "amount": "0.2",
+      "price_eur": "120",
+      "fee_eur": "0",
+      "tx_id": "buy-2"
+    },
+    {
+      "timestamp": "2025-01-10T10:00:00Z",
+      "asset": "SOL",
+      "type": "SELL",
+      "amount": "1.0",
+      "price_eur": "100",
+      "fee_eur": "0",
+      "tx_id": "sell-1"
+    }
+  ],
+  "expected": {
+    "realized_gain_count": 1,
+    "total_gain_eur": "-50",
+    "staking_income_count": 0,
+    "staking_income_total_eur": "0",
+    "internal_transfer_count": 0,
+    "unmatched_transfer_count": 0,
+    "open_lots": {
+      "SOL": [
+        {
+          "amount_remaining": "0.2",
+          "total_cost_eur": "24"
+        }
+      ]
+    },
+    "gain_flags_by_index": [
+      ["Wash-Sale-Warning"]
+    ]
+  }
+}

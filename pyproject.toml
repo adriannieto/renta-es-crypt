@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "renta-es-crypt"
+version = "0.0.1"
+description = "CLI tool to calculate Spanish crypto capital gains and losses using FIFO."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+dependencies = [
+  "openpyxl>=3.1.0",
+  "pandas>=2.2.0",
+  "pydantic>=2.6.0",
+  "pyyaml>=6.0.0",
+  "requests>=2.31.0",
+]
+
+keywords = ["crypto", "tax", "spain", "fifo", "aeat"]
+
+[project.scripts]
+renta-es-crypt = "src.app.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+src = ["defaults.yaml"]

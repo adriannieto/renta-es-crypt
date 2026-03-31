@@ -1,0 +1,2 @@
+"txid","refid","time","type","subtype","aclass","subclass","asset","wallet","amount","fee","balance"
+"krk-withdraw-1","withdrawal-1","2025-01-05 10:00:00","withdrawal","","currency","crypto","BTC","spot / main","-0.1000000000","0.0001000000","0.9000000000"
